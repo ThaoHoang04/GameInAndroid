@@ -1,0 +1,25 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="20dp"
+    android:background="@drawable/bg">
+
+    <Button
+        android:id="@+id/btn_play_with_friend"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chơi với người"
+        android:textSize="20sp"
+        android:backgroundTint="#ffbb00"/>
+
+    <Button
+        android:id="@+id/btn_play_with_ai"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chơi với máy"
+        android:textSize="20sp"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="#cc1234"/>
+</LinearLayout>
