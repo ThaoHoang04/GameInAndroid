@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button reset, again;
     private int playerOneScoreCount, playerTwoScoreCount;
     private boolean playerOneActive, playWithAI;
+    private String aiLevel;
     private Animation scaleUp, moveUp;
     private int[] gameState = {2, 2, 2, 2, 2, 2, 2, 2, 2};
     private int[][] winningPositions = {
@@ -45,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
         playWithAI = getIntent().getBooleanExtra("playWithAI", false);
+        aiLevel = getIntent().getStringExtra("aiLevel");
         getWidget();
         createAnimations();
 
@@ -64,9 +66,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         previousWinner = false;  // Khởi tạo biến theo mặc định là không có người thắng trước đó
     }
-
     private void toggleMusic() {
         isMusicPlaying = !isMusicPlaying;
+
         if (isMusicPlaying) {
             if (mediaPlayer == null) {
                 mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
@@ -76,11 +78,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             btnSound.setImageResource(R.drawable.baseline_volume_up_24);
         } else {
             if (mediaPlayer != null) {
-                mediaPlayer.pause();
+                mediaPlayer.stop();
+                mediaPlayer.release();
+                mediaPlayer = null;
             }
             btnSound.setImageResource(R.drawable.baseline_volume_off_24);
         }
     }
+
 
     private void getWidget() {
         playerOneScore = findViewById(R.id.score_Player1);
@@ -178,7 +183,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         playerOneActive = !playerOneActive;
 
         if (playWithAI && !playerOneActive) {
-            aiMove();
+            if ("easy".equals(aiLevel)) {
+                aiMove();
+            } else if ("medium".equals(aiLevel)) {
+                aiMoveMedium();
+            } else {
+                aiMoveHard();
+            }
         }
 
         reset.setOnClickListener(view1 -> {
@@ -230,6 +241,188 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             player2.setTextColor(Color.parseColor("#000000"));
         }, 300);  // AI sẽ đánh sau 500ms
     }
+private void aiMoveMedium() {
+    new android.os.Handler().postDelayed(() -> {
+        int move = -1;
+
+        // Kiểm tra nếu AI có thể thắng
+        move = checkForWinningMove(1);
+        if (move == -1) {
+            // Kiểm tra nếu đối thủ có thể thắng và ngăn chặn
+            move = checkForWinningMove(0);
+        }
+
+        // Nếu không có nước đi chiến thắng hoặc ngăn chặn, chọn ngẫu nhiên
+        if (move == -1) {
+            Random rand = new Random();
+            do {
+                move = rand.nextInt(9);
+            } while (gameState[move] != 2);
+        }
+
+        gameState[move] = 1;  // AI đánh dấu "O"
+        buttons[move].setText("O");
+        buttons[move].setTextColor(Color.parseColor("#70fc3a"));
+        rounds++;
+
+        if (checkWinner()) {
+            if (!playerOneActive) {
+                playerStatus.setText("AI has won");
+                playWinSound();
+                updatePlayerScore();
+                new android.os.Handler().postDelayed(this::playAgain, 2000);
+            }
+        } else if (rounds == 9) {
+            playerStatus.setText("No Winner");
+            playerStatus.setTextColor(Color.parseColor("#FFD700"));
+            playerStatus.setTextSize(40);
+            playerStatus.setTypeface(null, Typeface.BOLD);
+            playerStatus.startAnimation(scaleUp);
+            playerStatus.startAnimation(moveUp);
+            new android.os.Handler().postDelayed(this::playAgain, 2000);
+        } else {
+            playerOneActive = true;
+        }
+
+        player1.setTextColor(Color.parseColor("#FF0000"));
+        TextView player2 = findViewById(R.id.textPlayer2);
+        player2.setTextColor(Color.parseColor("#000000"));
+    }, 300);
+}
+
+    private void aiMoveHard() {
+        new android.os.Handler().postDelayed(() -> {
+            int move = findBestMove();
+
+            gameState[move] = 1;  // AI đánh dấu "O"
+            buttons[move].setText("O");
+            buttons[move].setTextColor(Color.parseColor("#70fc3a"));
+            rounds++;
+
+            if (checkWinner()) {
+                if (!playerOneActive) {
+                    playerStatus.setText("AI has won");
+                    playWinSound();
+                    updatePlayerScore();
+                    new android.os.Handler().postDelayed(this::playAgain, 2000);
+                }
+            } else if (rounds == 9) {
+                playerStatus.setText("No Winner");
+                playerStatus.setTextColor(Color.parseColor("#FFD700"));
+                playerStatus.setTextSize(40);
+                playerStatus.setTypeface(null, Typeface.BOLD);
+                playerStatus.startAnimation(scaleUp);
+                playerStatus.startAnimation(moveUp);
+                new android.os.Handler().postDelayed(this::playAgain, 2000);
+            } else {
+                playerOneActive = true;
+            }
+
+            player1.setTextColor(Color.parseColor("#FF0000"));
+            TextView player2 = findViewById(R.id.textPlayer2);
+            player2.setTextColor(Color.parseColor("#000000"));
+        }, 300);
+    }
+
+    // Kiểm tra xem AI có thể thắng không
+    private int checkForWinningMove(int player) {
+        for (int[] winningPosition : winningPositions) {
+            if (gameState[winningPosition[0]] == player &&
+                    gameState[winningPosition[1]] == player &&
+                    gameState[winningPosition[2]] == 2) {
+                return winningPosition[2];
+            }
+            if (gameState[winningPosition[1]] == player &&
+                    gameState[winningPosition[2]] == player &&
+                    gameState[winningPosition[0]] == 2) {
+                return winningPosition[0];
+            }
+            if (gameState[winningPosition[0]] == player &&
+                    gameState[winningPosition[2]] == player &&
+                    gameState[winningPosition[1]] == 2) {
+                return winningPosition[1];
+            }
+        }
+        return -1;
+    }
+
+    // Tìm nước đi tốt nhất cho AI
+    private int findBestMove() {
+        int bestVal = Integer.MIN_VALUE;
+        int bestMove = -1;
+
+        for (int i = 0; i < 9; i++) {
+            if (gameState[i] == 2) {
+                gameState[i] = 1;  // Giả lập AI đi
+                int moveVal = minimax(gameState, 0, false);
+                gameState[i] = 2;  // Khôi phục trạng thái ô
+
+                if (moveVal > bestVal) {
+                    bestMove = i;
+                    bestVal = moveVal;
+                }
+            }
+        }
+
+        return bestMove;
+    }
+
+    // Minimax thuật toán (có thể triển khai cho cấp độ khó)
+    private int minimax(int[] board, int depth, boolean isMax) {
+        int score = evaluate(board);
+
+        // Nếu AI thắng
+        if (score == 10) return score;
+
+        // Nếu đối thủ thắng
+        if (score == -10) return score;
+
+        // Nếu không còn nước đi nào
+        if (isMovesLeft(board) == false) return 0;
+
+        if (isMax) {
+            int best = Integer.MIN_VALUE;
+
+            for (int i = 0; i < 9; i++) {
+                if (board[i] == 2) {
+                    board[i] = 1;
+                    best = Math.max(best, minimax(board, depth + 1, !isMax));
+                    board[i] = 2;
+                }
+            }
+            return best;
+        } else {
+            int best = Integer.MAX_VALUE;
+
+            for (int i = 0; i < 9; i++) {
+                if (board[i] == 2) {
+                    board[i] = 0;
+                    best = Math.min(best, minimax(board, depth + 1, !isMax));
+                    board[i] = 2;
+                }
+            }
+            return best;
+        }
+    }
+
+    private boolean isMovesLeft(int[] board) {
+        for (int i = 0; i < 9; i++) {
+            if (board[i] == 2) return true;
+        }
+        return false;
+    }
+
+    private int evaluate(int[] b) {
+        // Kiểm tra tất cả các hàng, cột và đường chéo
+        for (int[] winningPosition : winningPositions) {
+            if (b[winningPosition[0]] == b[winningPosition[1]] &&
+                    b[winningPosition[1]] == b[winningPosition[2]]) {
+                if (b[winningPosition[0]] == 1) return 10;
+                else if (b[winningPosition[0]] == 0) return -10;
+            }
+        }
+        return 0;
+    }
     private void playWinSound() {
         if (winSoundPlayer != null) {
             winSoundPlayer.start();
@@ -257,7 +450,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         playerStatus.setText("");
         previousWinner = false;  // Reset trạng thái người thắng
         if (playWithAI && !playerOneActive) {
-            aiMove();  // AI sẽ đánh ngay sau khi trò chơi bắt đầu lại
+//            aiMove();  // AI sẽ đánh ngay sau khi trò chơi bắt đầu lại
+//            aiMoveMedium();
+            aiMoveHard();
         }
     }
 

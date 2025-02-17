@@ -21,6 +21,9 @@ public class ChooseModeActivity extends AppCompatActivity {
 
         Button btnPlayWithFriend = findViewById(R.id.btn_play_with_friend);
         Button btnPlayWithAI = findViewById(R.id.btn_play_with_ai);
+        Button btnEasy = findViewById(R.id.btn_easy);
+        Button btnMedium = findViewById(R.id.btn_medium);
+        Button btnHard = findViewById(R.id.btn_hard);
         btnSound = findViewById(R.id.btn_sound);
 
         // Khởi tạo nhạc nền
@@ -31,7 +34,7 @@ public class ChooseModeActivity extends AppCompatActivity {
         // Xử lý sự kiện bật/tắt nhạc
         btnSound.setOnClickListener(v -> toggleMusic());
 
-        // Xử lý chọn chế độ chơi
+        // Xử lý chọn chơi với người
         btnPlayWithFriend.setOnClickListener(v -> {
             Intent intent = new Intent(ChooseModeActivity.this, MainActivity.class);
             intent.putExtra("playWithAI", false);
@@ -39,12 +42,33 @@ public class ChooseModeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // Chơi với máy - hiển thị lựa chọn độ khó
         btnPlayWithAI.setOnClickListener(v -> {
+            btnEasy.setVisibility(View.VISIBLE);
+            btnMedium.setVisibility(View.VISIBLE);
+            btnHard.setVisibility(View.VISIBLE);
+        });
+
+        // Xử lý chọn độ khó
+        View.OnClickListener aiModeListener = v -> {
             Intent intent = new Intent(ChooseModeActivity.this, MainActivity.class);
             intent.putExtra("playWithAI", true);
             intent.putExtra("isMusicPlaying", isMusicPlaying);
+
+            if (v.getId() == R.id.btn_easy) {
+                intent.putExtra("aiLevel", "easy");
+            } else if (v.getId() == R.id.btn_medium) {
+                intent.putExtra("aiLevel", "medium");
+            } else if (v.getId() == R.id.btn_hard) {
+                intent.putExtra("aiLevel", "hard");
+            }
+
             startActivity(intent);
-        });
+        };
+
+        btnEasy.setOnClickListener(aiModeListener);
+        btnMedium.setOnClickListener(aiModeListener);
+        btnHard.setOnClickListener(aiModeListener);
     }
 
     private void toggleMusic() {

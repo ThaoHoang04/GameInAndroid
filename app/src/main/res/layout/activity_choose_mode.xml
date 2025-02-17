@@ -36,4 +36,36 @@
         android:layout_below="@id/btn_play_with_friend"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="20dp"/>
+
+
+    <Button
+        android:id="@+id/btn_easy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Dễ"
+        android:layout_below="@id/btn_play_with_ai"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/btn_medium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Trung bình"
+        android:layout_below="@id/btn_easy"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/btn_hard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Khó"
+        android:layout_below="@id/btn_medium"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:visibility="gone"/>
+
 </RelativeLayout>
