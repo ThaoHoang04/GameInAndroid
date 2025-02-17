@@ -1,25 +1,39 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="20dp"
-    android:background="@drawable/bg">
+    android:background="@drawable/bg"
+    android:padding="20dp">
 
+    <!-- Icon Loa -->
+    <ImageButton
+        android:id="@+id/btn_sound"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/baseline_volume_up_24"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="16dp"/>
+
+    <!-- Chơi với người -->
     <Button
         android:id="@+id/btn_play_with_friend"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Chơi với người"
         android:textSize="20sp"
-        android:backgroundTint="#ffbb00"/>
+        android:backgroundTint="#ffbb00"
+        android:layout_centerInParent="true"/>
 
+    <!-- Chơi với máy -->
     <Button
         android:id="@+id/btn_play_with_ai"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Chơi với máy"
         android:textSize="20sp"
-        android:layout_marginTop="20dp"
-        android:backgroundTint="#cc1234"/>
-</LinearLayout>
+        android:backgroundTint="#cc1234"
+        android:layout_below="@id/btn_play_with_friend"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"/>
+</RelativeLayout>
