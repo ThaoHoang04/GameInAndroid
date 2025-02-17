@@ -56,9 +56,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
             mediaPlayer.setLooping(true);
             mediaPlayer.start();
-            btnSound.setImageResource(R.drawable.baseline_volume_up_24);
-        } else {
-            btnSound.setImageResource(R.drawable.baseline_volume_off_24);
+
         }
 
         // Khởi tạo âm thanh chiến thắng
@@ -70,19 +68,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         isMusicPlaying = !isMusicPlaying;
 
         if (isMusicPlaying) {
+            // Nếu mediaPlayer bị null, khởi tạo lại để phát nhạc từ đầu
             if (mediaPlayer == null) {
                 mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
                 mediaPlayer.setLooping(true);
             }
             mediaPlayer.start();
-            btnSound.setImageResource(R.drawable.baseline_volume_up_24);
         } else {
+            // Nếu mediaPlayer đang chạy, dừng và giải phóng
             if (mediaPlayer != null) {
                 mediaPlayer.stop();
                 mediaPlayer.release();
-                mediaPlayer = null;
+                mediaPlayer = null;  // Giải phóng để tránh rò rỉ bộ nhớ
             }
-            btnSound.setImageResource(R.drawable.baseline_volume_off_24);
         }
     }
 
@@ -488,4 +486,14 @@ private void aiMoveMedium() {
         }
         return false;
     }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+    }
+
 }
