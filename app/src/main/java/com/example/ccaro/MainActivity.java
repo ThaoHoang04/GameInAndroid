@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (playerOneActive) {
                 playerStatus.setText("Player-1 has won");
             } else {
-                playerStatus.setText(playWithAI ? "AI has won" : "Player-2 has won");
+                playerStatus.setText(playWithAI ? "Player-1 has lost" : "Player-2 has won");
             }
             playerStatus.setTextColor(Color.parseColor("#FFD700")); // Đổi màu chữ thành vàng
             playerStatus.setTypeface(null, Typeface.BOLD); // In đậm
@@ -213,7 +213,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // Kiểm tra kết quả sau khi AI đánh xong
             if (checkWinner()) {
                 if (!playerOneActive) {
-                    playerStatus.setText("AI has won");
+                    playerStatus.setText("Player-1 has  ");
                     playWinSound();  // Phát âm thanh khi AI thắng
                     updatePlayerScore();
                     new android.os.Handler().postDelayed(this::playAgain, 2000); // Bắt đầu lại trò chơi sau 2 giây
@@ -263,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             if (checkWinner()) {
                 if (!playerOneActive) {
-                    playerStatus.setText("AI has won");
+                    playerStatus.setText("Player-1 has lost ");
                     playWinSound();
                     updatePlayerScore();
                     new android.os.Handler().postDelayed(this::playAgain, 2000);
@@ -299,7 +299,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             if (checkWinner()) {
                 if (!playerOneActive) {
-                    playerStatus.setText("AI has won");
+                    playerStatus.setText("Player-1 has lost");
                     playWinSound();
                     updatePlayerScore();
                     new android.os.Handler().postDelayed(this::playAgain, 2000);
@@ -494,13 +494,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 playWinSound();  // Phát âm thanh khi Player 2 thắng
                 previousWinner = true;  // Lưu trạng thái người thắng
 
-                playerStatus.setText(playWithAI ? "AI has won" : "Player-2 has won");
+                playerStatus.setText(playWithAI ? "lost lost" : "Player-2 has won");
                 playerStatus.setTextColor(Color.RED);
                 playerStatus.setTypeface(null, Typeface.BOLD);
                 playerStatus.setTextSize(40);
                 playerStatus.startAnimation(scaleUp);
                 playerStatus.startAnimation(moveUp);
-//                updatePlayerScore();
+                updatePlayerScore();
 
                 // Dừng kiểm tra SeekBar và bắt đầu lại trò chơi sau 5 giây
                 handler.removeCallbacks(this);
@@ -526,7 +526,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 playerStatus.setTextSize(40);
                 playerStatus.startAnimation(scaleUp);
                 playerStatus.startAnimation(moveUp);
-//                updatePlayerScore();
+                updatePlayerScore();
 
                 // Dừng kiểm tra SeekBar và bắt đầu lại trò chơi sau 5 giây
                 handler.removeCallbacks(this);
