@@ -493,7 +493,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 playerTwoScoreCount++; // Cập nhật điểm số cho Player 2
                 playWinSound();  // Phát âm thanh khi Player 2 thắng
                 previousWinner = true;  // Lưu trạng thái người thắng
-
                 playerStatus.setText(playWithAI ? "lost lost" : "Player-2 has won");
                 playerStatus.setTextColor(Color.RED);
                 playerStatus.setTypeface(null, Typeface.BOLD);
@@ -501,7 +500,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 playerStatus.startAnimation(scaleUp);
                 playerStatus.startAnimation(moveUp);
                 updatePlayerScore();
-
+                //test
                 // Dừng kiểm tra SeekBar và bắt đầu lại trò chơi sau 5 giây
                 handler.removeCallbacks(this);
                 new android.os.Handler().postDelayed(() -> {
