@@ -4,12 +4,15 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.Handler;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
 import android.view.animation.TranslateAnimation;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -31,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             {1, 4, 7}, {2, 5, 8}, {0, 4, 8}, {2, 4, 6}
     };
     private int rounds;
+    private Handler handler = new Handler();  // Khai báo handler để chạy runnable
 
     // Biến quản lý âm thanh
     private MediaPlayer mediaPlayer, winSoundPlayer;
@@ -38,6 +42,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ImageButton btnSound;
 
     private boolean previousWinner;  // Biến để lưu người thắng ván trước
+// xử lý chạy ngược time
+    private SeekBar seekBar1,seekBar2;
+    private CountDownTimer countDownTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,8 +55,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         playWithAI = getIntent().getBooleanExtra("playWithAI", false);
         aiLevel = getIntent().getStringExtra("aiLevel");
         getWidget();
+        checkWinner();
         createAnimations();
-
         // Khởi tạo nhạc nền
         isMusicPlaying = getIntent().getBooleanExtra("isMusicPlaying", true);
         if (isMusicPlaying) {
@@ -64,26 +71,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         previousWinner = false;  // Khởi tạo biến theo mặc định là không có người thắng trước đó
     }
-    private void toggleMusic() {
-        isMusicPlaying = !isMusicPlaying;
-
-        if (isMusicPlaying) {
-            // Nếu mediaPlayer bị null, khởi tạo lại để phát nhạc từ đầu
-            if (mediaPlayer == null) {
-                mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
-                mediaPlayer.setLooping(true);
-            }
-            mediaPlayer.start();
-        } else {
-            // Nếu mediaPlayer đang chạy, dừng và giải phóng
-            if (mediaPlayer != null) {
-                mediaPlayer.stop();
-                mediaPlayer.release();
-                mediaPlayer = null;  // Giải phóng để tránh rò rỉ bộ nhớ
-            }
-        }
-    }
-
 
     private void getWidget() {
         playerOneScore = findViewById(R.id.score_Player1);
@@ -93,6 +80,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         again = findViewById(R.id.btn_play_again);
         player1 = findViewById(R.id.textPlayer1);
         player1.setTextColor(Color.parseColor("#FF0000"));
+        seekBar1 = findViewById(R.id.seekBar1);
+        seekBar2 = findViewById(R.id.seekBar2);
+        startCountdown(seekBar1);
 
         for (int i = 0; i < 9; i++) {
             String buttonID = "btn" + (i + 1);
@@ -102,8 +92,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         // Xử lý sự kiện nhấn loa
-        btnSound = findViewById(R.id.btn_sound);
-        btnSound.setOnClickListener(v -> toggleMusic());
+//        btnSound = findViewById(R.id.btn_sound);
+//        btnSound.setOnClickListener(v -> toggleMusic());
 
         playerOneScoreCount = 0;
         playerTwoScoreCount = 0;
@@ -129,20 +119,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         if (playerOneActive) {
             ((Button) view).setText("X");
+            seekBar1.setVisibility(View.GONE);
+
             ((Button) view).setTextColor(Color.parseColor("#FFD700"));
             gameState[gameStatePointer] = 0;
             player1.setTextColor(Color.parseColor("#000000"));
             TextView player2 = findViewById(R.id.textPlayer2);
             player2.setTextColor(Color.parseColor("#FF0000"));
+            startCountdown(seekBar2);
         } else {
             TextView player2 = findViewById(R.id.textPlayer2);
             player2.setTextColor(Color.parseColor("#000000"));
             ((Button)view).setText("O");
+            seekBar2.setVisibility(View.GONE);
 
             ((Button)view).setTextColor(Color.parseColor("#70fc3a"));
 
             gameState[gameStatePointer] = 1;
             player1.setTextColor(Color.parseColor("#FF0000"));
+              startCountdown(seekBar1);
+
         }
 
         rounds++;
@@ -237,56 +233,60 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             player1.setTextColor(Color.parseColor("#FF0000"));
             TextView player2 = findViewById(R.id.textPlayer2);
             player2.setTextColor(Color.parseColor("#000000"));
-        }, 300);  // AI sẽ đánh sau 500ms
+            seekBar2.setVisibility(View.GONE);
+            startCountdown(seekBar1);
+        }, 500);  // AI sẽ đánh sau 500ms
     }
-private void aiMoveMedium() {
-    new android.os.Handler().postDelayed(() -> {
-        int move = -1;
+    private void aiMoveMedium() {
+        new android.os.Handler().postDelayed(() -> {
+            int move = -1;
 
-        // Kiểm tra nếu AI có thể thắng
-        move = checkForWinningMove(1);
-        if (move == -1) {
-            // Kiểm tra nếu đối thủ có thể thắng và ngăn chặn
-            move = checkForWinningMove(0);
-        }
-
-        // Nếu không có nước đi chiến thắng hoặc ngăn chặn, chọn ngẫu nhiên
-        if (move == -1) {
-            Random rand = new Random();
-            do {
-                move = rand.nextInt(9);
-            } while (gameState[move] != 2);
-        }
-
-        gameState[move] = 1;  // AI đánh dấu "O"
-        buttons[move].setText("O");
-        buttons[move].setTextColor(Color.parseColor("#70fc3a"));
-        rounds++;
-
-        if (checkWinner()) {
-            if (!playerOneActive) {
-                playerStatus.setText("AI has won");
-                playWinSound();
-                updatePlayerScore();
-                new android.os.Handler().postDelayed(this::playAgain, 2000);
+            // Kiểm tra nếu AI có thể thắng
+            move = checkForWinningMove(1);
+            if (move == -1) {
+                // Kiểm tra nếu đối thủ có thể thắng và ngăn chặn
+                move = checkForWinningMove(0);
             }
-        } else if (rounds == 9) {
-            playerStatus.setText("No Winner");
-            playerStatus.setTextColor(Color.parseColor("#FFD700"));
-            playerStatus.setTextSize(40);
-            playerStatus.setTypeface(null, Typeface.BOLD);
-            playerStatus.startAnimation(scaleUp);
-            playerStatus.startAnimation(moveUp);
-            new android.os.Handler().postDelayed(this::playAgain, 2000);
-        } else {
-            playerOneActive = true;
-        }
 
-        player1.setTextColor(Color.parseColor("#FF0000"));
-        TextView player2 = findViewById(R.id.textPlayer2);
-        player2.setTextColor(Color.parseColor("#000000"));
-    }, 300);
-}
+            // Nếu không có nước đi chiến thắng hoặc ngăn chặn, chọn ngẫu nhiên
+            if (move == -1) {
+                Random rand = new Random();
+                do {
+                    move = rand.nextInt(9);
+                } while (gameState[move] != 2);
+            }
+
+            gameState[move] = 1;  // AI đánh dấu "O"
+            buttons[move].setText("O");
+            buttons[move].setTextColor(Color.parseColor("#70fc3a"));
+            rounds++;
+
+            if (checkWinner()) {
+                if (!playerOneActive) {
+                    playerStatus.setText("AI has won");
+                    playWinSound();
+                    updatePlayerScore();
+                    new android.os.Handler().postDelayed(this::playAgain, 2000);
+                }
+            } else if (rounds == 9) {
+                playerStatus.setText("No Winner");
+                playerStatus.setTextColor(Color.parseColor("#FFD700"));
+                playerStatus.setTextSize(40);
+                playerStatus.setTypeface(null, Typeface.BOLD);
+                playerStatus.startAnimation(scaleUp);
+                playerStatus.startAnimation(moveUp);
+                new android.os.Handler().postDelayed(this::playAgain, 2000);
+            } else {
+                playerOneActive = true;
+            }
+
+            player1.setTextColor(Color.parseColor("#FF0000"));
+            TextView player2 = findViewById(R.id.textPlayer2);
+            player2.setTextColor(Color.parseColor("#000000"));
+            seekBar2.setVisibility(View.GONE);
+            startCountdown(seekBar1);
+        }, 300);
+    }
 
     private void aiMoveHard() {
         new android.os.Handler().postDelayed(() -> {
@@ -319,6 +319,8 @@ private void aiMoveMedium() {
             player1.setTextColor(Color.parseColor("#FF0000"));
             TextView player2 = findViewById(R.id.textPlayer2);
             player2.setTextColor(Color.parseColor("#000000"));
+            seekBar2.setVisibility(View.GONE);
+            startCountdown(seekBar1);
         }, 300);
     }
 
@@ -422,21 +424,21 @@ private void aiMoveMedium() {
         return 0;
     }
     private void playWinSound() {
-        if (winSoundPlayer != null) {
+        if (isMusicPlaying) {  // Chỉ phát âm thanh nếu nhạc đang bật
+            if (winSoundPlayer == null) {
+                winSoundPlayer = MediaPlayer.create(this, R.raw.win);
+            }
             winSoundPlayer.start();
         }
     }
 
+
     private void playAgain() {
         rounds = 0;
-        // Đảo ngược người đi trước sau mỗi ván chơi nếu có người thắng ván trước
-        if (previousWinner) {
-            playerOneActive = !playerOneActive;  // Đổi người đi trước
-        }
 
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            mediaPlayer.stop();
-            mediaPlayer.prepareAsync();  // Chuẩn bị lại nhạc nền nếu cần
+        // Đảo ngược người đi trước nếu có người thắng ván trước
+        if (previousWinner) {
+            playerOneActive = !playerOneActive;
         }
 
         // Xóa trạng thái của game và bắt đầu lại
@@ -445,18 +447,108 @@ private void aiMoveMedium() {
             buttons[i].setText("");  // Xóa hết các kí tự trên các nút
         }
 
-        playerStatus.setText("");
-        previousWinner = false;  // Reset trạng thái người thắng
-        if (playWithAI && !playerOneActive) {
-//            aiMove();  // AI sẽ đánh ngay sau khi trò chơi bắt đầu lại
-//            aiMoveMedium();
-            aiMoveHard();
+        // Reset SeekBar
+        seekBar1.setVisibility(View.VISIBLE);
+        seekBar2.setVisibility(View.VISIBLE);
+        seekBar1.setProgress(100);
+        seekBar2.setProgress(100);
+
+        // Bắt đầu lại đếm ngược cho người chơi đầu tiên
+        if (playerOneActive) {
+            startCountdown(seekBar1);
+        } else {
+            startCountdown(seekBar2);
         }
+
+        // Cập nhật UI
+        playerStatus.setText("");
+        previousWinner = false; // Reset trạng thái người thắng
+
+        // Nếu chơi với AI và đến lượt AI, thì AI sẽ đi ngay
+        if (playWithAI && !playerOneActive) {
+            if ("easy".equals(aiLevel)) {
+                aiMove();
+            } else if ("medium".equals(aiLevel)) {
+                aiMoveMedium();
+            } else {
+                aiMoveHard();
+            }
+        }
+
+        // Chạy lại kiểm tra trạng thái SeekBar
+        handler.postDelayed(checkSeekBarProgress, 1000);
     }
 
     private void updatePlayerScore() {
         playerOneScore.setText(String.valueOf(playerOneScoreCount));
         playerTwoScore.setText(String.valueOf(playerTwoScoreCount));
+    }
+    private Runnable checkSeekBarProgress = new Runnable() {
+        @Override
+        public void run() {
+            // Kiểm tra nếu SeekBar của Player 1 hết thời gian
+            if (seekBar1 != null && seekBar1.getProgress() == 0) {
+                seekBar1.setVisibility(View.GONE);
+                seekBar2.setVisibility(View.GONE);
+                playerTwoScoreCount++; // Cập nhật điểm số cho Player 2
+                playWinSound();  // Phát âm thanh khi Player 2 thắng
+                previousWinner = true;  // Lưu trạng thái người thắng
+
+                playerStatus.setText(playWithAI ? "AI has won" : "Player-2 has won");
+                playerStatus.setTextColor(Color.RED);
+                playerStatus.setTypeface(null, Typeface.BOLD);
+                playerStatus.setTextSize(40);
+                playerStatus.startAnimation(scaleUp);
+                playerStatus.startAnimation(moveUp);
+//                updatePlayerScore();
+
+                // Dừng kiểm tra SeekBar và bắt đầu lại trò chơi sau 5 giây
+                handler.removeCallbacks(this);
+                new android.os.Handler().postDelayed(() -> {
+                    playAgain();
+                    handler.post(checkSeekBarProgress);  // Chạy lại kiểm tra SeekBar
+                }, 1000);
+
+                return;
+            }
+
+            // Kiểm tra nếu SeekBar của Player 2 hết thời gian
+            if (seekBar2 != null && seekBar2.getProgress() == 0) {
+                seekBar1.setVisibility(View.GONE);
+                seekBar2.setVisibility(View.GONE);
+                playerOneScoreCount++; // Cập nhật điểm số cho Player 1
+                playWinSound();  // Phát âm thanh khi Player 1 thắng
+                previousWinner = true;  // Lưu trạng thái người thắng
+
+                playerStatus.setText("Player 1 has won");
+                playerStatus.setTextColor(Color.RED);
+                playerStatus.setTypeface(null, Typeface.BOLD);
+                playerStatus.setTextSize(40);
+                playerStatus.startAnimation(scaleUp);
+                playerStatus.startAnimation(moveUp);
+//                updatePlayerScore();
+
+                // Dừng kiểm tra SeekBar và bắt đầu lại trò chơi sau 5 giây
+                handler.removeCallbacks(this);
+                new android.os.Handler().postDelayed(() -> {
+                    playAgain();
+                    handler.post(checkSeekBarProgress);  // Chạy lại kiểm tra SeekBar
+                }, 5000);
+
+                return;
+            }
+
+            // Nếu SeekBar chưa hết thời gian, tiếp tục kiểm tra sau mỗi giây
+            handler.postDelayed(this, 1000);
+        }
+    };
+
+    private void startSeekBarTimer() {
+        handler.postDelayed(checkSeekBarProgress, 1000);  // Bắt đầu kiểm tra SeekBar mỗi giây
+    }
+
+    private void stopSeekBarTimer() {
+        handler.removeCallbacks(checkSeekBarProgress);  // Dừng kiểm tra khi kết thúc
     }
 
     private boolean checkWinner() {
@@ -465,27 +557,37 @@ private void aiMoveMedium() {
                     gameState[winningPosition[1]] == gameState[winningPosition[2]] &&
                     gameState[winningPosition[0]] != 2) {
                 if (gameState[winningPosition[0]] == 0) {
+                    seekBar1.setVisibility(View.GONE);
+                    seekBar2.setVisibility(View.GONE);
                     playerOneScoreCount++; // Cập nhật điểm số cho người chơi 1
                     playWinSound();  // Phát âm thanh khi Player 1 thắng
                     previousWinner = true;  // Lưu trạng thái người thắng
                 } else {
-                    playerTwoScoreCount++; // Cập nhật điểm số cho Player 2 hoặc AI
+                    seekBar2.setVisibility(View.GONE);
+                    seekBar1.setVisibility(View.GONE);
+                    startCountdown(seekBar2); // Nếu cần, có thể bắt đầu lại đếm ngược cho Player 2
+                    playerTwoScoreCount++; // Cập nhật điểm số cho Player 2
                     playWinSound();  // Phát âm thanh khi Player 2 (hoặc AI) thắng
                     previousWinner = true;  // Lưu trạng thái người thắng
                 }
 
                 playerStatus.setTextColor(Color.parseColor("#FFD700")); // Đổi màu chữ thành vàng
                 playerStatus.setTypeface(null, Typeface.BOLD); // In đậm chữ
-                playerStatus.setTextSize(40); // Kích thước chữ 50
+                playerStatus.setTextSize(40); // Kích thước chữ 40
                 playerStatus.startAnimation(scaleUp); // Phóng to chữ
                 playerStatus.startAnimation(moveUp); // Di chuyển chữ lên
                 updatePlayerScore(); // Cập nhật điểm số
 
+                stopSeekBarTimer();  // Dừng kiểm tra SeekBar khi có người thắng
                 return true;
             }
         }
+
+        // Nếu không có người thắng, tiếp tục theo dõi SeekBar
+        startSeekBarTimer();  // Bắt đầu kiểm tra trạng thái SeekBar
         return false;
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -494,6 +596,26 @@ private void aiMoveMedium() {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+    }
+    // Hàm bắt đầu đếm ngược
+
+    private void startCountdown(SeekBar seekBar) {
+        if (countDownTimer != null) {
+            countDownTimer.cancel();  // Dừng timer trước khi chạy cái mới
+        }
+
+        seekBar.setVisibility(View.VISIBLE);
+        seekBar.setProgress(100);
+
+        countDownTimer = new CountDownTimer(10000, 100) { // 10s, cập nhật mỗi 100ms
+            public void onTick(long millisUntilFinished) {
+                seekBar.setProgress((int) (millisUntilFinished / 100));
+            }
+
+            public void onFinish() {
+                seekBar.setProgress(0);
+            }
+        }.start();
     }
 
 }
